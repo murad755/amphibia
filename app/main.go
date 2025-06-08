@@ -5,6 +5,8 @@ import (
 	tele "gopkg.in/telebot.v4"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -46,17 +48,52 @@ func main() {
 	})
 
 	bot.Handle("/getlyrics", func(c tele.Context) error {
+		//TODO: Get user's message from "c"
+		//TODO: Send request to backend using user message
+		//TODO: Map response from server to menu <songName, songID>
+		//TODO: View response to the user
 		return c.Send("🎵 Which song's lyrics do you want to hear?", menu)
 	})
 
 	bot.Handle(tele.OnCallback, func(c tele.Context) error {
-		print(c.Callback().Data)
+		callbackData := c.Callback().Data
+		songId, err := strconv.Atoi(strings.TrimSpace(callbackData))
+		if err != nil {
+			return err
+		}
+		_ = songId
+		//TODO Send songID to server to get lyrics.
+		//TODO Send song lyrics as splitted message.
+
+		/*
+			messageSplitted := chunkString(message, 4096)
+			for _, m := range messageSplitted {
+				_, err = b.Send(to, m, options...)
+				if err != nil {
+					return err
+				}
+			}
+
+
+			func chunkString(s string, chunkSize int) []string {
+				var chunks []string
+				runes := []rune(s)
+
+				if len(runes) == 0 {
+					return []string{s}
+				}
+
+				for i := 0; i < len(runes); i += chunkSize {
+					nn := i + chunkSize
+					if nn > len(runes) {
+						nn = len(runes)
+					}
+					chunks = append(chunks, string(runes[i:nn]))
+				}
+				return chunks
+			}
+		*/
 		return nil
-		//songId, err := strconv.Atoi(strings.TrimSpace(callbackData))
-		//if err != nil {
-		//	bh.Logger.Println(err.Error())
-		//	return
-		//}
 	})
 
 	log.Println("✅ Bot is running")
