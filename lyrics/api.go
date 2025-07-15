@@ -2,24 +2,52 @@ package lyrics
 
 import (
 	"encoding/json"
-	"github.com/murad755/telegram-bot-lyrics/models"
+	"fmt"
 	"net/http"
 	"net/url"
 )
 
-func ListLyrics(query string) (*models.ListLyricsResp, error) {
-	baseURL := "http://localhost:5001/api/v1/find-songs/?query="
-	escapedQuery := url.QueryEscape(query)
+type ListLyricsResp struct {
+	Success  bool     `json:"success"`
+	Errors   []string `json:"errors"`
+	Query    string   `json:"query"`
+	Messages struct {
+		Songlist []struct {
+			ID    int    `json:"id"`
+			Title string `json:"title"`
+		} `json:"songlist"`
+	} `json:"messages"`
+}
 
-	response, err := http.Get(baseURL + escapedQuery)
+type GetLyricsResp struct {
+	Success  bool     `json:"success"`
+	Errors   []string `json:"errors"`
+	Query    string   `json:"query"`
+	Messages struct {
+		Lyrics string `json:"lyrics"`
+	} `json:"messages"`
+}
+
+type Client struct {
+	baseURL string
+}
+
+func NewURL(baseURL string) *Client {
+	return &Client{baseURL: baseURL}
+}
+
+func (c *Client) ListLyrics(query string) (*ListLyricsResp, error) {
+	escapedQuery := url.QueryEscape(query)
+	fullURL := c.baseURL + "/find-songs/?query=" + escapedQuery
+
+	response, err := http.Get(fullURL)
 	if err != nil {
 		return nil, err
 	}
 	defer response.Body.Close()
 
+	var resp ListLyricsResp
 	decoder := json.NewDecoder(response.Body)
-	var resp models.ListLyricsResp
-
 	err = decoder.Decode(&resp)
 	if err != nil {
 		return nil, err
@@ -28,17 +56,18 @@ func ListLyrics(query string) (*models.ListLyricsResp, error) {
 	return &resp, nil
 }
 
-func GetLyrics(id string) (*models.GetLyricsResp, error) {
-	baseURL := "http://localhost:5001/api/v1/song/"
+func (c *Client) GetLyrics(id string) (*GetLyricsResp, error) {
+	fullURL := c.baseURL + "/song/" + id + "/"
 
-	response, err := http.Get(baseURL + id)
+	fmt.Printf("song ID %s", fullURL)
+	response, err := http.Get(fullURL)
 	if err != nil {
 		return nil, err
 	}
 	defer response.Body.Close()
 
 	decoder := json.NewDecoder(response.Body)
-	var resp models.GetLyricsResp
+	var resp GetLyricsResp
 
 	err = decoder.Decode(&resp)
 	if err != nil {

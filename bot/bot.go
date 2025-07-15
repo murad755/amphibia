@@ -1,13 +1,14 @@
 package bot
 
 import (
+	"github.com/murad755/telegram-bot-lyrics/lyrics"
 	"log"
 	"time"
 
 	tele "gopkg.in/telebot.v4"
 )
 
-func Start(token string) {
+func Start(token string, lyricsClient *lyrics.Client) {
 	bot, err := tele.NewBot(tele.Settings{
 		Token:  token,
 		Poller: &tele.LongPoller{Timeout: 10 * time.Second},
@@ -16,7 +17,7 @@ func Start(token string) {
 		log.Fatal(err)
 	}
 
-	RegisterHandlers(bot)
+	RegisterHandlers(bot, lyricsClient)
 
 	log.Println("✅ Bot is running")
 	bot.Start()

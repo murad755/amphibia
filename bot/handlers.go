@@ -8,7 +8,7 @@ import (
 	tele "gopkg.in/telebot.v4"
 )
 
-func RegisterHandlers(bot *tele.Bot) {
+func RegisterHandlers(bot *tele.Bot, lyricsClient *lyrics.Client) {
 	bot.Handle("/start", func(c tele.Context) error {
 		return c.Send("👋 Welcome! Type song name to get the song.")
 	})
@@ -19,7 +19,7 @@ func RegisterHandlers(bot *tele.Bot) {
 			return nil
 		}
 
-		resp, err := lyrics.ListLyrics(songName)
+		resp, err := lyricsClient.ListLyrics(songName)
 		if err != nil {
 			return c.Send("❌ Error fetching lyrics list")
 		}
@@ -40,12 +40,18 @@ func RegisterHandlers(bot *tele.Bot) {
 
 	bot.Handle(tele.OnCallback, func(c tele.Context) error {
 		id := strings.TrimSpace(c.Callback().Data)
-		resp, err := lyrics.GetLyrics(id)
+
+		resp, err := lyricsClient.GetLyrics(id)
 		if err != nil {
 			return c.Send("❌ Error fetching lyrics")
 		}
 
-		chunks := lyrics.ChunkString(resp.Messages.Lyrics, 4096)
+		lyricsText := strings.TrimSpace(resp.Messages.Lyrics)
+		if lyricsText == "" {
+			return c.Send("Sorry, no lyrics found for this song.")
+		}
+
+		chunks := lyrics.ChunkString(lyricsText, 4096)
 		for _, part := range chunks {
 			if err := c.Send(part); err != nil {
 				return err
