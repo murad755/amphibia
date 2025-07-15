@@ -16,6 +16,7 @@ func main() {
 	if token == "" {
 		log.Fatal("TOKEN not set in environment")
 	}
+
 	baseURL := os.Getenv("LYRICS_API_URL")
 	if baseURL == "" {
 		log.Fatal("LYRICS_API_URL not set in environment")
@@ -24,5 +25,4 @@ func main() {
 	lyricsClient := lyrics.NewURL(baseURL)
 
 	bot.Start(token, lyricsClient)
-
 }

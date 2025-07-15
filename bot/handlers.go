@@ -14,8 +14,10 @@ func RegisterHandlers(bot *tele.Bot, lyricsClient *lyrics.Client) {
 	})
 
 	bot.Handle(tele.OnText, func(c tele.Context) error {
+		// todo combine to avoid unnecessary assignments
 		songName := strings.TrimSpace(c.Text())
 		if songName == "" || strings.HasPrefix(songName, "/") {
+			// todo why nil not error? also add logging everywhere
 			return nil
 		}
 
@@ -24,6 +26,7 @@ func RegisterHandlers(bot *tele.Bot, lyricsClient *lyrics.Client) {
 			return c.Send("❌ Error fetching lyrics list")
 		}
 
+		// todo think if Messages can be nil, in that case if there is no nil check this code will throw nil pointer dereference panic
 		if len(resp.Messages.Songlist) == 0 {
 			return c.Send("😢 No songs found.")
 		}
@@ -53,10 +56,12 @@ func RegisterHandlers(bot *tele.Bot, lyricsClient *lyrics.Client) {
 
 		chunks := lyrics.ChunkString(lyricsText, 4096)
 		for _, part := range chunks {
-			if err := c.Send(part); err != nil {
+			// todo read about shadow declarations
+			if err = c.Send(part); err != nil {
 				return err
 			}
 		}
+
 		return nil
 	})
 }

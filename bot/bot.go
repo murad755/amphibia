@@ -19,6 +19,5 @@ func Start(token string, lyricsClient *lyrics.Client) {
 
 	RegisterHandlers(bot, lyricsClient)
 
-	log.Println("✅ Bot is running")
 	bot.Start()
 }

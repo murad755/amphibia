@@ -2,11 +2,11 @@ package lyrics
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 )
 
+// todo look into making it more readable
 type ListLyricsResp struct {
 	Success  bool     `json:"success"`
 	Errors   []string `json:"errors"`
@@ -19,6 +19,7 @@ type ListLyricsResp struct {
 	} `json:"messages"`
 }
 
+// todo look into making it more readable
 type GetLyricsResp struct {
 	Success  bool     `json:"success"`
 	Errors   []string `json:"errors"`
@@ -37,7 +38,7 @@ func NewURL(baseURL string) *Client {
 }
 
 func (c *Client) ListLyrics(query string) (*ListLyricsResp, error) {
-	escapedQuery := url.QueryEscape(query)
+	escapedQuery := url.QueryEscape(query) // todo combine these two to avoid unnecessary variables
 	fullURL := c.baseURL + "/find-songs/?query=" + escapedQuery
 
 	response, err := http.Get(fullURL)
@@ -48,8 +49,7 @@ func (c *Client) ListLyrics(query string) (*ListLyricsResp, error) {
 
 	var resp ListLyricsResp
 	decoder := json.NewDecoder(response.Body)
-	err = decoder.Decode(&resp)
-	if err != nil {
+	if err = decoder.Decode(&resp); err != nil {
 		return nil, err
 	}
 
@@ -58,8 +58,7 @@ func (c *Client) ListLyrics(query string) (*ListLyricsResp, error) {
 
 func (c *Client) GetLyrics(id string) (*GetLyricsResp, error) {
 	fullURL := c.baseURL + "/song/" + id + "/"
-
-	fmt.Printf("song ID %s", fullURL)
+	//todo move fullURL below
 	response, err := http.Get(fullURL)
 	if err != nil {
 		return nil, err
@@ -69,8 +68,7 @@ func (c *Client) GetLyrics(id string) (*GetLyricsResp, error) {
 	decoder := json.NewDecoder(response.Body)
 	var resp GetLyricsResp
 
-	err = decoder.Decode(&resp)
-	if err != nil {
+	if err = decoder.Decode(&resp); err != nil {
 		return nil, err
 	}
 
@@ -86,6 +84,7 @@ func ChunkString(s string, chunkSize int) []string {
 	}
 
 	for i := 0; i < len(runes); i += chunkSize {
+		// todo use proper variable names, what is nn?
 		nn := i + chunkSize
 		if nn > len(runes) {
 			nn = len(runes)
