@@ -17,7 +17,7 @@ func Start(token string, lyricsClient *lyrics.Client) {
 		log.Fatal(err)
 	}
 
-	RegisterHandlers(bot, lyricsClient)
+	NewHandler(bot, lyricsClient)
 
 	bot.Start()
 }
