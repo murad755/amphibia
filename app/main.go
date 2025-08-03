@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/murad755/telegram-bot-lyrics/bot"
-	"github.com/murad755/telegram-bot-lyrics/lyrics"
+	"github.com/murad755/amphibia/bot"
+	"github.com/murad755/amphibia/lyrics"
 	"log"
 	"os"
 

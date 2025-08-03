@@ -1,4 +1,4 @@
-module github.com/murad755/telegram-bot-lyrics
+module github.com/murad755/amphibia
 
 go 1.23.3
 
