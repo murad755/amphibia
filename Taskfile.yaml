@@ -1,0 +1,8 @@
+---
+version: '3'
+tasks:
+  image-build-push:
+    description: Build image
+    cmds:
+      - docker build -t registry.zemfira.me/amphibia:latest .
+      - docker push registry.zemfira.me/amphibia:latest
