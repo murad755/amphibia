@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/murad755/amphibia/bot"
-	"github.com/murad755/amphibia/lyrics"
 	"log"
 	"os"
+
+	"github.com/murad755/amphibia/bot"
+	"github.com/murad755/amphibia/lyrics"
 
 	"github.com/joho/godotenv"
 )
@@ -24,5 +25,8 @@ func main() {
 
 	lyricsClient := lyrics.NewURL(baseURL)
 
-	bot.Start(token, lyricsClient)
+	err := bot.Start(token, lyricsClient)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

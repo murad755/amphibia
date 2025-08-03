@@ -1,23 +1,24 @@
 package bot
 
 import (
+	"fmt"
 	"github.com/murad755/amphibia/lyrics"
-	"log"
 	"time"
 
 	tele "gopkg.in/telebot.v4"
 )
 
-func Start(token string, lyricsClient *lyrics.Client) {
+func Start(token string, lyricsClient *lyrics.Client) error {
 	bot, err := tele.NewBot(tele.Settings{
 		Token:  token,
 		Poller: &tele.LongPoller{Timeout: 10 * time.Second},
 	})
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("start bot: %w", err)
 	}
 
-	NewHandler(bot, lyricsClient)
+	h := NewHandler(bot, lyricsClient)
+	h.bot.Start()
 
-	bot.Start()
+	return nil
 }

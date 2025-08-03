@@ -1,7 +1,9 @@
 package bot
 
 import (
+	"fmt"
 	"github.com/murad755/amphibia/lyrics"
+	"log"
 	"strconv"
 	"strings"
 
@@ -30,19 +32,17 @@ func (h *Handler) handleStart(c tele.Context) error {
 }
 
 func (h *Handler) handleText(c tele.Context) error {
-	// todo combine to avoid unnecessary assignments
 	songName := strings.TrimSpace(c.Text())
 	if songName == "" || strings.HasPrefix(songName, "/") {
-		// todo why nil not error? also add logging everywhere
-		return nil
+		return ErrEmptySongName
 	}
 
 	resp, err := h.lyricsClient.ListLyrics(songName)
 	if err != nil {
+		log.Printf("Error getting lyrics: %v", err)
 		return c.Send("❌ Error fetching lyrics list")
 	}
 
-	// todo think if Messages can be nil, in that case if there is no nil check this code will throw nil pointer dereference panic
 	if len(resp.Messages.Songlist) == 0 {
 		return c.Send("😢 No songs found.")
 	}
@@ -62,6 +62,7 @@ func (h *Handler) handleCallback(c tele.Context) error {
 
 	resp, err := h.lyricsClient.GetLyrics(id)
 	if err != nil {
+		log.Printf("Error getting lyrics: %v", err)
 		return c.Send("❌ Error fetching lyrics")
 	}
 
@@ -72,9 +73,8 @@ func (h *Handler) handleCallback(c tele.Context) error {
 
 	chunks := lyrics.ChunkString(lyricsText, 4096)
 	for _, part := range chunks {
-		// todo read about shadow declarations
 		if err = c.Send(part); err != nil {
-			return err
+			return fmt.Errorf("sending lyrics: %w", err)
 		}
 	}
 

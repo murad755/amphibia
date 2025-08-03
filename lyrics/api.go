@@ -2,6 +2,7 @@ package lyrics
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 )
@@ -43,14 +44,14 @@ func (c *Client) ListLyrics(query string) (*ListLyricsResp, error) {
 
 	response, err := http.Get(fullURL)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fetch lyrics: %w", err)
 	}
 	defer response.Body.Close()
 
 	var resp ListLyricsResp
 	decoder := json.NewDecoder(response.Body)
 	if err = decoder.Decode(&resp); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("decoding lyrics: %w", err)
 	}
 
 	return &resp, nil
@@ -61,7 +62,7 @@ func (c *Client) GetLyrics(id string) (*GetLyricsResp, error) {
 	//todo move fullURL below
 	response, err := http.Get(fullURL)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fetch lyrics: %w", err)
 	}
 	defer response.Body.Close()
 
@@ -69,7 +70,7 @@ func (c *Client) GetLyrics(id string) (*GetLyricsResp, error) {
 	var resp GetLyricsResp
 
 	if err = decoder.Decode(&resp); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("decoding lyrics: %w", err)
 	}
 
 	return &resp, nil
