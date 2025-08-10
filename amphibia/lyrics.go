@@ -33,7 +33,16 @@ func (s *Service) SearchLyrics(songName string) ([]Song, error) {
 	if len(resp.Messages.Songlist) == 0 {
 		return nil, ErrNoSongsFound
 	}
-	return nil, songName
+
+	songList := make([]Song, 0, len(resp.Messages.Songlist))
+	for _, song := range resp.Messages.Songlist {
+		songList = append(songList, Song{
+			ID:    strconv.Itoa(song.ID),
+			Title: song.Title,
+		})
+	}
+
+	return songList, nil
 }
 
 func (s *Service) LyricsByID(id string) (string, error) {

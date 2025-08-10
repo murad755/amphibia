@@ -11,7 +11,7 @@ import (
 )
 
 func (h *Handler) handleStart(c tele.Context) error {
-	return c.Send("👋 Welcome! Type song name to get the song.")
+	return c.Send("BEEP BOOP 🤖. Type song name to get the song. If you are feeling lucky, add ! in the end 👾.")
 }
 
 func (h *Handler) handleText(c tele.Context) error {
