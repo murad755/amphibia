@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/murad755/amphibia/amphibia"
 	"github.com/murad755/amphibia/bot"
 	"github.com/murad755/amphibia/lyrics"
 
@@ -24,8 +25,8 @@ func main() {
 	}
 
 	lyricsClient := lyrics.NewURL(baseURL)
-
-	err := bot.Start(token, lyricsClient)
+	svc := amphibia.NewService(lyricsClient)
+	err := bot.Start(token, svc)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -3,29 +3,10 @@ package bot
 import (
 	"fmt"
 	"github.com/murad755/amphibia/lyrics"
-	"log"
-	"strconv"
 	"strings"
 
 	tele "gopkg.in/telebot.v4"
 )
-
-type Handler struct {
-	bot          *tele.Bot
-	lyricsClient *lyrics.Client
-}
-
-func NewHandler(bot *tele.Bot, client *lyrics.Client) *Handler {
-	h := &Handler{bot: bot, lyricsClient: client}
-	h.register()
-	return h
-}
-
-func (h *Handler) register() {
-	h.bot.Handle("/start", h.handleStart)
-	h.bot.Handle(tele.OnText, h.handleText)
-	h.bot.Handle(tele.OnCallback, h.handleCallback)
-}
 
 func (h *Handler) handleStart(c tele.Context) error {
 	return c.Send("👋 Welcome! Type song name to get the song.")
@@ -33,47 +14,35 @@ func (h *Handler) handleStart(c tele.Context) error {
 
 func (h *Handler) handleText(c tele.Context) error {
 	songName := strings.TrimSpace(c.Text())
-	if songName == "" || strings.HasPrefix(songName, "/") {
-		return ErrEmptySongName
-	}
 
-	if strings.Contains(songName, "!") {
+	// Lucky search for getting first matched song
+	if strings.HasSuffix(songName, "!") {
 		cleanName := strings.ReplaceAll(songName, "!", "")
-		return h.handleDirectLyrics(c, strings.TrimSpace(cleanName))
+
+		firstLyrics, err := h.svc.FindFirstLyrics(strings.TrimSpace(cleanName))
+		if err != nil {
+			return err
+		}
+
+		return h.sendSplitText(c, firstLyrics)
 	}
 
-	resp, err := h.lyricsClient.ListLyrics(songName)
+	songList, err := h.svc.SearchLyrics(songName)
 	if err != nil {
-		log.Printf("Error getting lyrics: %v", err)
-		return c.Send("❌ Error fetching lyrics list")
-	}
-
-	if len(resp.Messages.Songlist) == 0 {
-		return c.Send("😢 No songs found.")
+		return err
 	}
 
 	menu := &tele.ReplyMarkup{}
-	rows := make([]tele.Row, 0, len(resp.Messages.Songlist))
-	for _, song := range resp.Messages.Songlist {
-		rows = append(rows, menu.Row(menu.Data(song.Title, strconv.Itoa(song.ID))))
+	rows := make([]tele.Row, 0, len(songList))
+	for _, song := range songList {
+		rows = append(rows, menu.Row(menu.Data(song.Title, song.ID)))
 	}
 	menu.Inline(rows...)
 
 	return c.Send("🎵 Select a song from below:", menu)
 }
 
-func (h *Handler) sendLyricsByID(c tele.Context, id string) error {
-	resp, err := h.lyricsClient.GetLyrics(id)
-	if err != nil {
-		log.Printf("Error getting lyrics: %v", err)
-		return c.Send("❌ Error fetching lyrics")
-	}
-
-	lyricsText := strings.TrimSpace(resp.Messages.Lyrics)
-	if lyricsText == "" {
-		return c.Send("😢 No lyrics found for this song.")
-	}
-
+func (h *Handler) sendSplitText(c tele.Context, lyricsText string) error {
 	chunks := lyrics.ChunkString(lyricsText, 4096)
 	for _, part := range chunks {
 		if err := c.Send(part); err != nil {
@@ -86,20 +55,11 @@ func (h *Handler) sendLyricsByID(c tele.Context, id string) error {
 
 func (h *Handler) handleCallback(c tele.Context) error {
 	id := strings.TrimSpace(c.Callback().Data)
-	return h.sendLyricsByID(c, id)
-}
 
-func (h *Handler) handleDirectLyrics(c tele.Context, songName string) error {
-	resp, err := h.lyricsClient.ListLyrics(songName)
+	l, err := h.svc.LyricsByID(id)
 	if err != nil {
-		log.Printf("Error listing lyrics (direct): %v", err)
-		return c.Send("❌ Error fetching lyrics")
+		return err
 	}
 
-	if len(resp.Messages.Songlist) == 0 {
-		return c.Send("😢 No songs found.")
-	}
-
-	firstSong := resp.Messages.Songlist[0]
-	return h.sendLyricsByID(c, strconv.Itoa(firstSong.ID))
+	return h.sendSplitText(c, l)
 }
