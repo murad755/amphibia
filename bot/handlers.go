@@ -1,7 +1,9 @@
 package bot
 
 import (
+	"errors"
 	"fmt"
+	"github.com/murad755/amphibia/amphibia"
 	"github.com/murad755/amphibia/lyrics"
 	"strings"
 
@@ -20,16 +22,26 @@ func (h *Handler) handleText(c tele.Context) error {
 		cleanName := strings.ReplaceAll(songName, "!", "")
 
 		firstLyrics, err := h.svc.FindFirstLyrics(strings.TrimSpace(cleanName))
-		if err != nil {
-			return err
+		switch {
+		case err == nil:
+			return h.sendSplitText(c, firstLyrics)
+		case errors.Is(err, amphibia.ErrLyricsUnavailable):
+			return c.Send("Lyrics is not available")
+		case errors.Is(err, amphibia.ErrNoSongsFound):
+			return c.Send("Song not found")
+		default:
+			return c.Send("Unknown error occured")
 		}
-
-		return h.sendSplitText(c, firstLyrics)
 	}
 
 	songList, err := h.svc.SearchLyrics(songName)
-	if err != nil {
-		return err
+	switch {
+	case errors.Is(err, amphibia.ErrLyricsUnavailable):
+		return c.Send("Lyrics is not available")
+	case errors.Is(err, amphibia.ErrNoSongsFound):
+		return c.Send("Song not found")
+	case err != nil:
+		return c.Send("Unknown error occured")
 	}
 
 	menu := &tele.ReplyMarkup{}
@@ -57,9 +69,14 @@ func (h *Handler) handleCallback(c tele.Context) error {
 	id := strings.TrimSpace(c.Callback().Data)
 
 	l, err := h.svc.LyricsByID(id)
-	if err != nil {
-		return err
+	switch {
+	case err == nil:
+		return h.sendSplitText(c, l)
+	case errors.Is(err, amphibia.ErrLyricsUnavailable):
+		return c.Send("Lyrics is not available")
+	case errors.Is(err, amphibia.ErrNoSongsFound):
+		return c.Send("Song not found")
+	default:
+		return c.Send("Unknown error occured")
 	}
-
-	return h.sendSplitText(c, l)
 }
