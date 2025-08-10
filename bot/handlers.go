@@ -37,6 +37,11 @@ func (h *Handler) handleText(c tele.Context) error {
 		return ErrEmptySongName
 	}
 
+	if strings.Contains(songName, "!") {
+		cleanName := strings.ReplaceAll(songName, "!", "")
+		return h.handleDirectLyrics(c, strings.TrimSpace(cleanName))
+	}
+
 	resp, err := h.lyricsClient.ListLyrics(songName)
 	if err != nil {
 		log.Printf("Error getting lyrics: %v", err)
@@ -57,9 +62,7 @@ func (h *Handler) handleText(c tele.Context) error {
 	return c.Send("🎵 Select a song from below:", menu)
 }
 
-func (h *Handler) handleCallback(c tele.Context) error {
-	id := strings.TrimSpace(c.Callback().Data)
-
+func (h *Handler) sendLyricsByID(c tele.Context, id string) error {
 	resp, err := h.lyricsClient.GetLyrics(id)
 	if err != nil {
 		log.Printf("Error getting lyrics: %v", err)
@@ -68,15 +71,35 @@ func (h *Handler) handleCallback(c tele.Context) error {
 
 	lyricsText := strings.TrimSpace(resp.Messages.Lyrics)
 	if lyricsText == "" {
-		return c.Send("Sorry, no lyrics found for this song.")
+		return c.Send("😢 No lyrics found for this song.")
 	}
 
 	chunks := lyrics.ChunkString(lyricsText, 4096)
 	for _, part := range chunks {
-		if err = c.Send(part); err != nil {
+		if err := c.Send(part); err != nil {
 			return fmt.Errorf("sending lyrics: %w", err)
 		}
 	}
 
 	return nil
+}
+
+func (h *Handler) handleCallback(c tele.Context) error {
+	id := strings.TrimSpace(c.Callback().Data)
+	return h.sendLyricsByID(c, id)
+}
+
+func (h *Handler) handleDirectLyrics(c tele.Context, songName string) error {
+	resp, err := h.lyricsClient.ListLyrics(songName)
+	if err != nil {
+		log.Printf("Error listing lyrics (direct): %v", err)
+		return c.Send("❌ Error fetching lyrics")
+	}
+
+	if len(resp.Messages.Songlist) == 0 {
+		return c.Send("😢 No songs found.")
+	}
+
+	firstSong := resp.Messages.Songlist[0]
+	return h.sendLyricsByID(c, strconv.Itoa(firstSong.ID))
 }
