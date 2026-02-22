@@ -3,25 +3,36 @@ package bot
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/murad755/amphibia/amphibia"
 	"github.com/murad755/amphibia/lyrics"
-	"strings"
 
 	tele "gopkg.in/telebot.v4"
 )
 
-const listeningPrefix = "I'm currently listening to: "
 const symfoniumTag = "#Symfonium"
 
+var symfoniumPrefixes = []string{
+	"Check out: ",              // e.g. "Check out: Bad Decisions • Girlhood #Symfonium"
+	"I'm currently listening to: ", // e.g. "I'm currently listening to: Ariana Grande - 7 rings #Symfonium"
+}
+
 // parseListeningCaption extracts search query and lucky flag from a Symfonium-style caption.
-// Format: "I'm currently listening to: <query> #Symfonium" with optional trailing "!" for lucky search.
+// Supports "Check out: <query> #Symfonium" or "I'm currently listening to: <query> #Symfonium" with optional trailing "!" for lucky search.
 // Returns query (trimmed), lucky (true if caption ends with !), and ok (true when prefix matches and query non-empty).
 func parseListeningCaption(caption string) (query string, lucky bool, ok bool) {
 	caption = strings.TrimSpace(caption)
-	if caption == "" || !strings.HasPrefix(caption, listeningPrefix) {
+	if caption == "" {
 		return "", false, false
 	}
-	rest := strings.TrimSpace(caption[len(listeningPrefix):])
+	var rest string
+	for _, prefix := range symfoniumPrefixes {
+		if strings.HasPrefix(caption, prefix) {
+			rest = strings.TrimSpace(caption[len(prefix):])
+			break
+		}
+	}
 	if rest == "" {
 		return "", false, false
 	}
@@ -110,16 +121,19 @@ func (h *Handler) handlePhoto(c tele.Context) error {
 	if msg.Photo == nil {
 		return nil
 	}
-	// Shareable caption is the stripped query (artist + song only), same trim as search.
+	// Shareable caption is the stripped query (artist + song only).
 	shareableCaption := "`" + escapeBackticks(query) + "`"
 	photo := &tele.Photo{File: tele.File{FileID: msg.Photo.FileID}, Caption: shareableCaption}
 	if err := c.Send(photo, &tele.SendOptions{ParseMode: tele.ModeMarkdown}); err != nil {
 		return err
 	}
 
+	// Search query: remove • and collapse spaces for lyrics API.
+	searchQuery := strings.Join(strings.Fields(strings.ReplaceAll(query, "•", " ")), " ")
+
 	// Run search using caption-derived query (same as handleText).
 	if lucky {
-		firstLyrics, err := h.svc.FindFirstLyrics(query)
+		firstLyrics, err := h.svc.FindFirstLyrics(searchQuery)
 		switch {
 		case err == nil:
 			return h.sendSplitText(c, firstLyrics)
@@ -132,7 +146,7 @@ func (h *Handler) handlePhoto(c tele.Context) error {
 		}
 	}
 
-	songList, err := h.svc.SearchLyrics(query)
+	songList, err := h.svc.SearchLyrics(searchQuery)
 	switch {
 	case errors.Is(err, amphibia.ErrLyricsUnavailable):
 		return c.Send("Lyrics is not available")
