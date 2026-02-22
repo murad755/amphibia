@@ -1,6 +1,6 @@
 ARG GOBIN=/app
 
-FROM golang:1.23.3-bookworm AS builder
+FROM golang:1.25-bookworm AS builder
 
 # building as root to avoid permission issues
 # end image will run as non-root user

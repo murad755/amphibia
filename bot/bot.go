@@ -22,6 +22,7 @@ func NewHandler(bot *tele.Bot, client *amphibia.Service) *Handler {
 func (h *Handler) register() {
 	h.bot.Handle("/start", h.handleStart)
 	h.bot.Handle(tele.OnText, h.handleText)
+	h.bot.Handle(tele.OnPhoto, h.handlePhoto)
 	h.bot.Handle(tele.OnCallback, h.handleCallback)
 }
 
